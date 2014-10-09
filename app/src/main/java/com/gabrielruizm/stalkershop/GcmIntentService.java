@@ -41,16 +41,18 @@ public class GcmIntentService extends IntentService {
              * any message types you're not interested in, or that you don't
              * recognize.
              */
-            if (GoogleCloudMessaging.
-                    MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
-                sendNotification("Send error: " + extras.toString());
-            } else if (GoogleCloudMessaging.
-                    MESSAGE_TYPE_DELETED.equals(messageType)) {
+            if (GoogleCloudMessaging.MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
+                sendNotification("Send error: " + extras.toString(),false);
+            } else if (GoogleCloudMessaging. MESSAGE_TYPE_DELETED.equals(messageType)) {
                 sendNotification("Deleted messages on server: " +
-                        extras.toString());
+                        extras.toString(), false);
                 // If it's a regular GCM message, do some work.
             } else if (GoogleCloudMessaging. MESSAGE_TYPE_MESSAGE.equals(messageType)) {
-                sendNotification(extras.getString("message"));
+                if (extras.getString("express")=="1")
+                    Log.i(TAG, "OK");
+                else
+                    Log.i(TAG, "No");
+                sendNotification(extras.getString("message"), false);
                 Log.i(TAG, extras.toString());
             }
         }
@@ -61,7 +63,7 @@ public class GcmIntentService extends IntentService {
     // Put the message into a notification and post it.
     // This is just one simple example of what you might choose to do with
     // a GCM message.
-    private void sendNotification(String msg) {
+    private void sendNotification(String msg, Boolean express) {
         mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
 

@@ -1,62 +1,82 @@
 package com.gabrielruizm.stalkershop;
 
-import android.app.Activity;
+import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-
+import android.view.View;
+import android.widget.ListView;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
-
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 
-public class MainActivity extends Activity {
-    public static final String EXTRA_MESSAGE = "message";
+public class MainActivity extends ListActivity {
     public static final String PROPERTY_REG_ID = "registration_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     String SENDER_ID = "200952171556";
-
-    /**
-     * Tag used on log messages.
-     */
+    private ArrayList<Item> items;
+    private ItemAdapter adapter;
     static final String TAG = "StalkerShop";
-
-    TextView mDisplay;
     GoogleCloudMessaging gcm;
-    AtomicInteger msgId = new AtomicInteger();
-    SharedPreferences prefs;
     Context context;
     String regid;
+    ProgressDialog progressDialog;
 
+    private final Handler progressHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            setData(msg.getData().getString("result"));
+            if (progressDialog.isShowing())
+                progressDialog.dismiss();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         context = getApplicationContext();
-
+        items = new ArrayList<Item>();
+        adapter = new ItemAdapter(this, items);
+        setListAdapter(adapter);
         // Check device for Play Services APK. If check succeeds, proceed with
         //  GCM registration.
         if (checkPlayServices()) {
             gcm = GoogleCloudMessaging.getInstance(this);
             regid = getRegistrationId(context);
-
-            if (regid.isEmpty()) {
+            if (regid.isEmpty())
                 registerInBackground();
-            }
             else
                 Log.i(TAG, regid);
+
+            progressDialog = ProgressDialog.show(this, "Cargando", "Aguántate wn");
+            new MyAsyncTask().execute();
         } else {
             Log.i(TAG, "No valid Google Play Services APK found.");
         }
@@ -76,9 +96,7 @@ public class MainActivity extends Activity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings)
-            return true;
-        return super.onOptionsItemSelected(item);
+        return id == R.id.action_settings || super.onOptionsItemSelected(item);
     }
 
     // You need to do the Play Services APK check here too.
@@ -86,6 +104,35 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         checkPlayServices();
+    }
+
+    private void setData(String result){
+        try {
+            JSONArray jsonArray = new JSONArray(result);
+            for (int i=0; i<jsonArray.length(); i++){
+                JSONObject obj = jsonArray.getJSONObject(i);
+                Item temp = new Item();
+                temp.setName(obj.getString("name"));
+                temp.setPrice(obj.getInt("price1"));
+                temp.setServerID(obj.getInt("id"));
+                temp.setUrl(obj.getString("url"));
+                JSONObject innerObj = obj.getJSONObject("shop");
+                temp.setShopName(innerObj.getString("name"));
+                adapter.add(temp);
+            }
+        adapter.notifyDataSetChanged();
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        String url = ((Item)l.getAdapter().getItem(position)).getUrl();
+        Log.i(TAG, url);
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        startActivity(browserIntent);
     }
 
     /**
@@ -171,7 +218,7 @@ public class MainActivity extends Activity {
 
             @Override
             protected String doInBackground(Void... params) {
-                String msg = "";
+                String msg;
                 try {
                     if (gcm == null) {
                         gcm = GoogleCloudMessaging.getInstance(context);
@@ -179,30 +226,18 @@ public class MainActivity extends Activity {
                     regid = gcm.register(SENDER_ID);
                     msg = "Device registered, registration ID=" + regid;
                     Log.i(TAG, regid);
-                    // You should send the registration ID to your server over HTTP,
-                    // so it can use GCM/HTTP or CCS to send messages to your app.
-                    // The request to your server should be authenticated if your app
-                    // is using accounts.
+                    //TODO:send the registration ID to your server over HTTP,
                     sendRegistrationIdToBackend();
-
-                    // For this demo: we don't need to send it because the device
-                    // will send upstream messages to a server that echo back the
-                    // message using the 'from' address in the message.
-
-                    // Persist the regID - no need to register again.
                     storeRegistrationId(context, regid);
                 } catch (IOException ex) {
                     msg = "Error :" + ex.getMessage();
-                    // If there is an error, don't just keep trying to register.
-                    // Require the user to click a button again, or perform
-                    // exponential back-off.
                 }
                 return msg;
             }
 
             @Override
             protected void onPostExecute(String msg) {
-                mDisplay.append(msg + "\n");
+
             }
         }.execute(null, null, null);
     }
@@ -232,6 +267,57 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_REG_ID, regId);
         editor.putInt(PROPERTY_APP_VERSION, appVersion);
-        editor.commit();
+        editor.apply();
     }
+
+    private class MyAsyncTask extends AsyncTask<String, Integer, String>{
+        @Override
+        protected String doInBackground(String... params) {
+            return getData();
+        }
+
+        protected void onPostExecute(String result){
+            //TODO: aca debe cargar el texto.
+            Message msg = new Message();
+            Bundle b = new Bundle();
+            b.putString("result", result);
+            msg.setData(b);
+            progressHandler.sendMessage(msg);
+        }
+
+        protected void onProgressUpdate(Integer... progress){
+            //TODO: acá se podría poner un progressBar
+        }
+
+        private String convertInputStreamToString(InputStream inputStream) throws IOException{
+            BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+            String line;
+            String result = "";
+            while((line = bufferedReader.readLine()) != null)
+                result += line;
+            inputStream.close();
+            return result;
+
+        }
+
+        public String getData() {
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpGet httpGet = new HttpGet("http://scrapy.gabrielruizm.com/get/");
+            InputStream inputStream;
+            String result=null;
+            try {
+                Log.i(TAG, "Iniciando llamada");
+                HttpResponse response = httpclient.execute(httpGet);
+                inputStream = response.getEntity().getContent();
+                if(inputStream != null)
+                    result = convertInputStreamToString(inputStream);
+            } catch (ClientProtocolException e) {
+                Log.i(TAG, "Request protocol exception");
+            } catch (IOException e) {
+                Log.i(TAG, "Request IO exception");
+            }
+            return result;
+        }
+    }
+
 }
