@@ -13,6 +13,9 @@ import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * Created by gabriel on 07-10-14.
  */
@@ -53,7 +56,6 @@ public class GcmIntentService extends IntentService {
                 else
                     Log.i(TAG, "No");
                 sendNotification(extras.getString("message"), false);
-                Log.i(TAG, extras.toString());
             }
         }
         // Release the wake lock provided by the WakefulBroadcastReceiver.
@@ -70,16 +72,27 @@ public class GcmIntentService extends IntentService {
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.ic_launcher)
-                        .setContentTitle("¡Nueva oferta en StalkerShop!")
-                        .setStyle(new NotificationCompat.BigTextStyle()
-                                .bigText(msg))
-                        .setContentText(msg);
-        mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
-//        mBuilder.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI);
-        mBuilder.setContentIntent(contentIntent);
-        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+        try {
+            JSONObject obj = new JSONObject(msg);
+            String cloudMessage = obj.getString("message");
+            int exp = obj.getInt("express");
+
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(this)
+                            .setSmallIcon(R.drawable.ic_launcher)
+                            .setContentTitle("¡Nueva oferta en StalkerShop!")
+                            .setStyle(new NotificationCompat.BigTextStyle()
+                                    .bigText(cloudMessage))
+                            .setContentText(cloudMessage);
+
+            if (exp==1)
+                mBuilder.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI);
+            else
+                mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+            mBuilder.setContentIntent(contentIntent);
+            mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }
