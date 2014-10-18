@@ -12,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,8 +24,11 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends ListActivity {
@@ -47,6 +52,8 @@ public class MainActivity extends ListActivity {
     Context context;
     String regid;
     ProgressDialog progressDialog;
+    String REGISTER_HOST = "http://54.94.154.45/register/";
+    String DOWNLOAD_HOST = "http://54.94.154.45/get/";
 
     private final Handler progressHandler = new Handler() {
         @Override
@@ -69,11 +76,12 @@ public class MainActivity extends ListActivity {
         //  GCM registration.
         if (checkPlayServices()) {
             gcm = GoogleCloudMessaging.getInstance(this);
-            regid = getRegistrationId(context);
-            if (regid.isEmpty())
-                registerInBackground();
-            else
-                Log.i(TAG, regid);
+            registerInBackground();
+            //regid = getRegistrationId(context);
+            //if (regid.isEmpty())
+               //registerInBackground();
+            //else
+              //  Log.i(TAG, regid);
 
             progressDialog = ProgressDialog.show(this, "Cargando", "Aguántate wn");
             new MyAsyncTask().execute();
@@ -113,17 +121,19 @@ public class MainActivity extends ListActivity {
                 JSONObject obj = jsonArray.getJSONObject(i);
                 Item temp = new Item();
                 temp.setName(obj.getString("name"));
-                temp.setPrice(obj.getInt("price1"));
+                temp.setPrice(obj.getInt("min_price"));
                 temp.setServerID(obj.getInt("id"));
                 temp.setUrl(obj.getString("url"));
-                JSONObject innerObj = obj.getJSONObject("shop");
-                temp.setShopName(innerObj.getString("name"));
+                if (obj.has("shopName"))
+                    temp.setShopName(obj.getString("shopName"));
                 adapter.add(temp);
             }
         adapter.notifyDataSetChanged();
 
         } catch (JSONException e) {
             e.printStackTrace();
+        } catch (NullPointerException npe){
+
         }
     }
 
@@ -224,15 +234,12 @@ public class MainActivity extends ListActivity {
                         gcm = GoogleCloudMessaging.getInstance(context);
                     }
                     regid = gcm.register(SENDER_ID);
-                    msg = "Device registered, registration ID=" + regid;
-                    Log.i(TAG, regid);
-                    //TODO:send the registration ID to your server over HTTP,
-                    sendRegistrationIdToBackend();
+                    sendRegistrationIdToBackend(regid);
                     storeRegistrationId(context, regid);
                 } catch (IOException ex) {
                     msg = "Error :" + ex.getMessage();
                 }
-                return msg;
+                return null;
             }
 
             @Override
@@ -248,8 +255,8 @@ public class MainActivity extends ListActivity {
      * device sends upstream messages to a server that echoes back the message
      * using the 'from' address in the message.
      */
-    private void sendRegistrationIdToBackend() {
-        Log.e("reg_id", regid);
+    private void sendRegistrationIdToBackend(String registrationID) {
+        new RegisterTask().execute(regid);
     }
 
 
@@ -263,7 +270,6 @@ public class MainActivity extends ListActivity {
     private void storeRegistrationId(Context context, String regId) {
         final SharedPreferences prefs = getGCMPreferences(context);
         int appVersion = getAppVersion(context);
-        Log.i(TAG, "Saving regId on app version " + appVersion);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PROPERTY_REG_ID, regId);
         editor.putInt(PROPERTY_APP_VERSION, appVersion);
@@ -302,7 +308,7 @@ public class MainActivity extends ListActivity {
 
         public String getData() {
             HttpClient httpclient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet("http://scrapy.gabrielruizm.com/get/");
+            HttpGet httpGet = new HttpGet(DOWNLOAD_HOST);
             InputStream inputStream;
             String result=null;
             try {
@@ -320,4 +326,43 @@ public class MainActivity extends ListActivity {
         }
     }
 
+
+
+    private class RegisterTask extends AsyncTask<String, Integer, String>{
+        @Override
+        protected String doInBackground(String... params) {
+            postData(params[0]);
+            return null;
+        }
+
+        protected void onPostExecute(String result){  }
+
+        protected void onProgressUpdate(Integer... progress){  }
+
+        public void postData(String registrationID) {
+            Log.i(TAG, "Subiendo regID");
+            String android_id = Settings.Secure.getString(getContentResolver(),
+                    Settings.Secure.ANDROID_ID);
+            String deviceName = android.os.Build.MODEL;
+
+            HttpClient httpclient = new DefaultHttpClient();
+            // specify the URL you want to post to
+            HttpPost httppost = new HttpPost(REGISTER_HOST);
+            try {
+                // create a list to store HTTP variables and their values
+                List nameValuePairs = new ArrayList();
+                // add an HTTP variable and value pair
+                nameValuePairs.add(new BasicNameValuePair("register_id", registrationID));
+                nameValuePairs.add(new BasicNameValuePair("device_id", android_id));
+                nameValuePairs.add(new BasicNameValuePair("device_name", deviceName));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                // send the variable and value, in other words post, to the URL
+                HttpResponse response = httpclient.execute(httppost);
+            } catch (ClientProtocolException e) {
+                // process exception
+            } catch (IOException e) {
+                // process exception
+            }
+        }
+    }
 }

@@ -6,16 +6,15 @@ package com.gabrielruizm.stalkershop;
 public class Item {
     private String name;
     private String url;
-    private String shopName;
     private int price;
     private int serverID;
+    private String shopName;
 
     public Item(){}
 
-    public Item(String name, String url, String shopName, int price, int serverID) {
+    public Item(String name, String url, int price, int serverID) {
         this.name = name;
         this.url = url;
-        this.shopName = shopName;
         this.price = price;
         this.serverID = serverID;
     }
@@ -26,10 +25,6 @@ public class Item {
 
     public String getUrl() {
         return url;
-    }
-
-    public String getShopName() {
-        return shopName;
     }
 
     public int getPrice() {
@@ -45,11 +40,10 @@ public class Item {
     }
 
     public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setShopName(String shopName) {
-        this.shopName = shopName;
+        if (url.startsWith("http://"))
+            this.url = url;
+        else
+            this.url = ("http://".concat(url));
     }
 
     public void setPrice(int price) {
@@ -60,4 +54,11 @@ public class Item {
         this.serverID = serverID;
     }
 
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
+    }
 }
