@@ -41,7 +41,10 @@ public class Item {
     }
 
     public void setUrl(String url) {
-        this.url = url;
+        if (url.startsWith("http://"))
+            this.url = url;
+        else
+            this.url = ("http://".concat(url));
     }
 
     public void setPrice(int price) {

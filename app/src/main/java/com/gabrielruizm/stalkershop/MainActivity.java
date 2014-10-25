@@ -355,7 +355,7 @@ public class MainActivity extends ListActivity {
                 nameValuePairs.add(new BasicNameValuePair("device_name", deviceName));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
                 // send the variable and value, in other words post, to the URL
-                HttpResponse response = httpclient.execute(httppost);
+                httpclient.execute(httppost);
             } catch (ClientProtocolException e) {
                 // process exception
             } catch (IOException e) {
