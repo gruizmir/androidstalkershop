@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/choose_shop">
+        <CheckBoxPreference
+            android:key="paris"
+            android:title="@string/falabella"/>
+        <CheckBoxPreference
+            android:key="falabella"
+            android:title="@string/paris"/>
+        <CheckBoxPreference
+            android:key="ripley"
+            android:title="@string/ripley"/>
+        <CheckBoxPreference
+            android:key="sodimac"
+            android:title="@string/sodimac"/>
+        <CheckBoxPreference
+            android:key="easy"
+            android:title="@string/easy"/>
+    </PreferenceCategory>
+
+    <intent android:action="android.intent.action.VIEW"
+        android:data="http://developer.android.com" />
+</PreferenceScreen>

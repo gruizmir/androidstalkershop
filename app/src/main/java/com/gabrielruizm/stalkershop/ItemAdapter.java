@@ -27,13 +27,15 @@ public class ItemAdapter extends ArrayAdapter<Item>{
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.item, parent, false);
         TextView itemNameTextView = (TextView) rowView.findViewById(R.id.item_name);
-        TextView shopNameTextView = (TextView) rowView.findViewById(R.id.shop_name);
         TextView priceTextView = (TextView) rowView.findViewById(R.id.price);
+        TextView shopNameTextView = (TextView) rowView.findViewById(R.id.shop_name);
 
         itemNameTextView.setText(temp.getName());
-        shopNameTextView.setText(temp.getShopName());
         priceTextView.setText(Integer.toString(temp.getPrice()));
+        shopNameTextView.setText(temp.getShopName());
 
+        if (temp.isNew())
+            rowView.setBackgroundColor(getContext().getResources().getColor(R.color.light_blue));
         return rowView;
     }
 }
