@@ -1,6 +1,7 @@
 package com.gabrielruizm.stalkershop;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -23,8 +24,10 @@ import org.json.JSONObject;
  */
 public class GcmIntentService extends IntentService {
     public static final int NOTIFICATION_ID = 1;
+    public static final int EXP_NOTIFICATION_ID = 2;
     private NotificationManager mNotificationManager;
     final static String GROUP_KEY = "SHOP_OFFER";
+    final static String EXP_GROUP_KEY = "SHOP_EXPRESS";
 
     public GcmIntentService() {
         super("GcmIntentService");
@@ -65,7 +68,7 @@ public class GcmIntentService extends IntentService {
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class), 0);
+                new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
 
         try {
             JSONObject obj = new JSONObject(msg);
@@ -79,16 +82,26 @@ public class GcmIntentService extends IntentService {
                             .setContentTitle("¡Nueva oferta en StalkerShop!")
                             .setStyle(new NotificationCompat.BigTextStyle()
                                     .bigText(cloudMessage))
-                            .setContentText(cloudMessage)
-                            .setGroup(GROUP_KEY);
+                            .setContentText(cloudMessage);
 
             SharedPreferences shopPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-            if (exp==1 && shopPreferences.getBoolean(shop.toLowerCase(), false))
-                mBuilder.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI);
-            else
-                mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+            boolean express = (exp==1 && shopPreferences.getBoolean(shop.toLowerCase(), false));
+            if (express) {
+                mBuilder.setSound(Settings.System.DEFAULT_ALARM_ALERT_URI)
+                        .setOnlyAlertOnce(true)
+                        .setGroup(EXP_GROUP_KEY);
+            }
+            else {
+                mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
+                        .setOnlyAlertOnce(true)
+                        .setGroup(GROUP_KEY);
+            }
             mBuilder.setContentIntent(contentIntent);
-            mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+            Notification notification = mBuilder.build();
+            if (express)
+                mNotificationManager.notify(EXP_NOTIFICATION_ID, notification);
+            else
+                mNotificationManager.notify(NOTIFICATION_ID, notification);
         } catch (JSONException e) {
             e.printStackTrace();
         }
