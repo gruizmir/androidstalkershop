@@ -25,16 +25,4 @@
         <item>@color/darkred</item>
     </integer-array>
 
-    <item name="blue_50" type="color">#FFE3F2FD</item>
-    <item name="blue_100" type="color">#FFBBDEFB</item>
-    <item name="blue_200" type="color">#FF90CAF9</item>
-    <item name="blue_300" type="color">#FF64B5F6</item>
-    <item name="blue_400" type="color">#FF42A5F5</item>
-    <item name="blue_500" type="color">#FF2196F3</item>
-    <item name="blue_600" type="color">#FF1E88E5</item>
-    <item name="blue_700" type="color">#FF1976D2</item>
-    <item name="blue_800" type="color">#FF1565C0</item>
-    <item name="blue_900" type="color">#FF0D47A1</item>
-
-
-</resources>
+</resources> 

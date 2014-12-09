@@ -70,6 +70,7 @@ public class MainActivity extends Activity {
     private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<Item> items;
     private ItemAdapter adapter;
+    private String downloadedData;
 
     /**
      * @return Application's version code from the {@code PackageManager}.
@@ -110,15 +111,20 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Check device for Play Services APK. If check succeeds, proceed with
-        //  GCM registration.
-        if (checkPlayServices()) {
-            gcm = GoogleCloudMessaging.getInstance(this);
-            registerInBackground();
-            progressDialog = ProgressDialog.show(this, "Cargando", "Descargando ofertas");
-            new MyAsyncTask().execute();
+        if (savedInstanceState != null) {
+            String mData = savedInstanceState.getString("downloaded_data", "");
+            setData(mData);
         } else {
-            Log.i(TAG, "No valid Google Play Services APK found.");
+            // Check device for Play Services APK. If check succeeds, proceed with
+            //  GCM registration.
+            if (checkPlayServices()) {
+                gcm = GoogleCloudMessaging.getInstance(this);
+                registerInBackground();
+                progressDialog = ProgressDialog.show(this, "Cargando", "Descargando ofertas");
+                new MyAsyncTask().execute();
+            } else {
+                Log.i(TAG, "No valid Google Play Services APK found.");
+            }
         }
     }
 
@@ -147,6 +153,7 @@ public class MainActivity extends Activity {
     }
 
     private void setData(String result){
+        this.downloadedData = result;
         try {
             JSONArray jsonArray = new JSONArray(result);
             for (int i = 0; i < jsonArray.length(); i++) {
@@ -170,6 +177,19 @@ public class MainActivity extends Activity {
 
         }
     }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString("downloaded_data", this.downloadedData);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
 
     /**
      * Check the device to make sure it has the Google Play Services APK. If
@@ -337,7 +357,6 @@ public class MainActivity extends Activity {
     }
 
 
-
     private class RegisterTask extends AsyncTask<String, Integer, String>{
         @Override
         protected String doInBackground(String... params) {
@@ -347,7 +366,9 @@ public class MainActivity extends Activity {
 
         protected void onPostExecute(String result){  }
 
-        protected void onProgressUpdate(Integer... progress){  }
+        protected void onProgressUpdate(Integer... progress) {
+            Log.i("value", Integer.toString(progress[0]));
+        }
 
         public void postData(String registrationID) {
             String android_id = Settings.Secure.getString(getContentResolver(),

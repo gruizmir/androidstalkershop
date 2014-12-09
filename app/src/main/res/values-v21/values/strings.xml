@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">StalkerShop</string>
+    <string name="hello_world">Hola mundo!</string>
+    <string name="action_settings">Preferencias</string>
+    <string name="row_filler">Medium Text</string>
+    <string name="choose_shop">Tiendas para avisos Express</string>
+    <string name="paris">París</string>
+    <string name="falabella">Falabella</string>
+    <string name="ripley">Ripley</string>
+    <string name="sodimac">Sodimac</string>
+    <string name="easy">Easy</string>
+
+</resources>

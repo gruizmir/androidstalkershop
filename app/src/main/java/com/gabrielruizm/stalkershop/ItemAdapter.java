@@ -10,7 +10,9 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 /**
+ * ${PACKAGE_NAME}
  * Created by gabriel on 09-10-14.
+ * Project ${PROJECT_NAME}
  */
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> implements View.OnClickListener {
 
@@ -22,11 +24,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> im
     public ItemAdapter(Context context, ArrayList<Item> items) {
         this.context = context;
         this.items = items;
-    }
-
-    public void add(Item item, int position) {
-        items.add(position, item);
-        notifyItemInserted(position);
     }
 
     public void add(Item item) {
@@ -55,7 +52,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> im
         final Item temp = items.get(position);
         holder.itemView.setTag(temp);
         holder.itemNameTextView.setText(temp.getName());
-        holder.priceTextView.setText(Integer.toString(temp.getPrice()));
+        holder.priceTextView.setText(temp.getFormattedPrice());
         holder.shopNameTextView.setText(temp.getShopName());
 
         if (temp.isNew())

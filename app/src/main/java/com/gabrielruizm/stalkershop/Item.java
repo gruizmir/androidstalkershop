@@ -48,6 +48,17 @@ public class Item {
         this.price = price;
     }
 
+    public String getFormattedPrice() {
+        String mPrice = Integer.toString(price);
+        StringBuilder mBuilder = new StringBuilder(mPrice).reverse();
+        for (int i = 3; i < mPrice.length(); i += 4) {
+            mBuilder.insert(i, ".");
+        }
+        mPrice = mBuilder.reverse().toString();
+        String formattedPrice = "$ ".concat(mPrice);
+        return formattedPrice;
+    }
+
     public int getServerID() {
         return serverID;
     }
