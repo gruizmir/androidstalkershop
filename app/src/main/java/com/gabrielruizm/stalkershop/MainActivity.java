@@ -1,8 +1,6 @@
 package com.gabrielruizm.stalkershop;
 
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
-import android.app.ListActivity;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -15,14 +13,18 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ListView;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -34,30 +36,20 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends ListActivity {
+public class MainActivity extends Activity {
     public static final String PROPERTY_REG_ID = "registration_id";
+    static final String TAG = "StalkerShop";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    String SENDER_ID = "200952171556";
-    private ArrayList<Item> items;
-    private ItemAdapter adapter;
-    static final String TAG = "StalkerShop";
-    GoogleCloudMessaging gcm;
-    Context context;
-    String regid;
-    ProgressDialog progressDialog;
-    String REGISTER_HOST = "http://54.94.154.45/register/";
-    String DOWNLOAD_HOST = "http://54.94.154.45/get/";
-
     private final Handler progressHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -66,15 +58,58 @@ public class MainActivity extends ListActivity {
                 progressDialog.dismiss();
         }
     };
+    String SENDER_ID = "200952171556";
+    GoogleCloudMessaging gcm;
+    Context context;
+    String regid;
+    ProgressDialog progressDialog;
+    String REGISTER_HOST = "http://54.94.154.45/register/";
+    String DOWNLOAD_HOST = "http://54.94.154.45/get/";
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private ArrayList<Item> items;
+    private ItemAdapter adapter;
+
+    /**
+     * @return Application's version code from the {@code PackageManager}.
+     */
+    private static int getAppVersion(Context context) {
+        try {
+            PackageInfo packageInfo = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            return packageInfo.versionCode;
+        } catch (PackageManager.NameNotFoundException e) {
+            // should never happen
+            throw new RuntimeException("Could not get package name: " + e);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.main_recycler_view);
+        mRecyclerView.setHasFixedSize(true);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
         context = getApplicationContext();
         items = new ArrayList<Item>();
         adapter = new ItemAdapter(this, items);
-        setListAdapter(adapter);
+        mRecyclerView.setAdapter(adapter);
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        adapter.setOnItemClickListener(new OnRecyclerViewItemClickListener<Item>() {
+            @Override
+            public void onItemClick(View view, Item item) {
+                String url = item.getUrl();
+                Log.i(TAG, url);
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(browserIntent);
+            }
+        });
+
         // Check device for Play Services APK. If check succeeds, proceed with
         //  GCM registration.
         if (checkPlayServices()) {
@@ -87,7 +122,6 @@ public class MainActivity extends ListActivity {
         }
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
@@ -96,7 +130,7 @@ public class MainActivity extends ListActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.action_settings:
                 startActivity(new Intent(this, UserSettingsActivity.class));
                 return true;
@@ -115,7 +149,7 @@ public class MainActivity extends ListActivity {
     private void setData(String result){
         try {
             JSONArray jsonArray = new JSONArray(result);
-            for (int i=0; i<jsonArray.length(); i++){
+            for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject obj = jsonArray.getJSONObject(i);
                 Item temp = new Item();
                 temp.setName(obj.getString("name"));
@@ -128,21 +162,13 @@ public class MainActivity extends ListActivity {
                     temp.setNew(obj.getBoolean("is_new"));
                 adapter.add(temp);
             }
-        adapter.notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
 
         } catch (JSONException e) {
             e.printStackTrace();
-        } catch (NullPointerException npe){
+        } catch (NullPointerException npe) {
 
         }
-    }
-
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        String url = ((Item)l.getAdapter().getItem(position)).getUrl();
-        Log.i(TAG, url);
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(browserIntent);
     }
 
     /**
@@ -164,7 +190,6 @@ public class MainActivity extends ListActivity {
         }
         return true;
     }
-
 
     /**
      * Gets the current registration ID for application on GCM service.
@@ -201,20 +226,6 @@ public class MainActivity extends ListActivity {
         // how you store the regID in your app is up to you.
         return getSharedPreferences(MainActivity.class.getSimpleName(),
                 Context.MODE_PRIVATE);
-    }
-
-    /**
-     * @return Application's version code from the {@code PackageManager}.
-     */
-    private static int getAppVersion(Context context) {
-        try {
-            PackageInfo packageInfo = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0);
-            return packageInfo.versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
-            // should never happen
-            throw new RuntimeException("Could not get package name: " + e);
-        }
     }
 
     /**
@@ -283,7 +294,7 @@ public class MainActivity extends ListActivity {
         }
 
         protected void onPostExecute(String result){
-            //TODO: aca debe cargar el texto.
+
             Message msg = new Message();
             Bundle b = new Bundle();
             b.putString("result", result);

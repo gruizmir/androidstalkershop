@@ -1,48 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-    android:orientation="vertical"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:weightSum="1"
-    android:paddingTop="10dp"
+    android:orientation="vertical"
+    android:paddingBottom="5dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
-    android:paddingBottom="5dp">
+    android:paddingTop="10dp"
+    android:weightSum="1">
 
     <TextView
+        android:id="@+id/item_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Large Text"
-        android:id="@+id/item_name"
+        android:layout_weight="0.04"
+        android:elevation="5dp"
         android:gravity="center_vertical"
-        android:layout_weight="0.04" />
+        android:text="Large Text"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textIsSelectable="false" />
 
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
         android:weightSum="1">
 
         <TextView
+            android:id="@+id/shop_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_weight="0.44"
+            android:elevation="5dp"
             android:text="Medium Text"
-            android:id="@+id/shop_name"
-            android:layout_weight="0.44" />
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TextView
+            android:id="@+id/price"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Medium Text"
-            android:id="@+id/price"
             android:layout_weight="0.55"
-            android:gravity="center_vertical" />
+            android:elevation="5dp"
+            android:gravity="center_vertical"
+            android:text="Medium Text"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
     </LinearLayout>
 
 </LinearLayout>

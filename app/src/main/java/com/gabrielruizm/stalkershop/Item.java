@@ -24,20 +24,13 @@ public class Item {
         return name;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public int getPrice() {
-        return price;
-    }
-
-    public int getServerID() {
-        return serverID;
-    }
-
     public void setName(String name) {
         this.name = name;
+        //   this.name = name.substring(0,1).toUpperCase() + name.substring(1).toLowerCase();
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     public void setUrl(String url) {
@@ -47,8 +40,16 @@ public class Item {
             this.url = ("http://".concat(url));
     }
 
+    public int getPrice() {
+        return price;
+    }
+
     public void setPrice(int price) {
         this.price = price;
+    }
+
+    public int getServerID() {
+        return serverID;
     }
 
     public void setServerID(int serverID) {
